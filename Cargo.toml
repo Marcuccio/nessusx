@@ -1,0 +1,17 @@
+[package]
+name = "nessusx"
+version = "1.0.0"
+edition = "2021"
+authors = ["abut0n"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+atty = "0.2.14"
+chrono = "0.4.22"
+colored = "2.0.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.93"
+serde-xml-rs = "0.6.0"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+tokio = { version = "1", features = ["full"] }
