@@ -5,9 +5,8 @@ edition = "2021"
 authors = ["abut0n"]
 description = "nessus serializer & deserializer"
 repository = "https://github.com/Marcuccio/nessusx"
-documentation = ""
 readme = "README.md"
-license = "GNU General Public License v3.0"
+license = "GPL-3.0-only"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
