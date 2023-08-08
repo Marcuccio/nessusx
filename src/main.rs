@@ -54,17 +54,21 @@ fn main() {
 
     }
 
-    if !util::check_exist_file(xml) {
-        std::process::exit(1);        
-    }
-
     util::warn("Use with caution. You are responsible for your actions.".to_string());
     util::warn("Developers assume no liability and are not responsible for any misuse or damage.".to_string());
     
-    let file: String = std::fs::read_to_string(xml).unwrap();
     
-    let scan: nessusx::NessusClientDataV2 = nessusx::from_str(&file).unwrap();
-    let j = serde_json::to_string(&scan).unwrap();
+    let scan_res = nessusx::from_file(xml);
+
+    match scan_res {
+        Ok(scan) => {
+            let j = serde_json::to_string_pretty(&scan).unwrap();
+            println!("{}", j);
+        }
+
+        Err(err) => {
+            util::error(format!("{}", err));
+        }      
+    }
     
-    println!("{}", j);
 }

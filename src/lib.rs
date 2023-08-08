@@ -2,15 +2,20 @@ use serde_xml_rs::Error;
 use serde_xml_rs;
 use serde::{Deserialize, Serialize};
 
+pub fn from_file(xml: &str) -> Result<Scan, Error> {
+    
+    let file = std::fs::read_to_string(xml)?;
 
-/// from_str Qualys Reports
-pub fn from_str<I: Into<String>>(buffer: I) -> Result<NessusClientDataV2, Error> {
-    let report: NessusClientDataV2 = serde_xml_rs::from_reader(buffer.into().as_bytes())?;
-    Ok(report)
+    return from_str(file)
 }
 
+pub fn from_str<I: Into<String>>(buffer: I) -> Result<Scan, Error> {
+    return serde_xml_rs::from_reader(buffer.into().as_bytes());
+}
+
+// NessusClientDataV2
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-pub struct NessusClientDataV2 {
+pub struct Scan {
     pub value: Option<String>,
 
     #[serde(rename = "Policy")]

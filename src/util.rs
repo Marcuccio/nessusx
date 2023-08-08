@@ -79,7 +79,7 @@ pub fn debug(msg: String) {
 }
 
 pub fn info(msg: String) {
-    eprintln!("{} {}", "[INF]".blue(), msg);
+    println!("{} {}", "[INF]".blue(), msg);
 }
 
 pub fn warn(msg: String) {
