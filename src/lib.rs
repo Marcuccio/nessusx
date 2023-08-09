@@ -177,6 +177,7 @@ pub struct ReportItem {
     pub plugin_output: Option<String>,
     pub see_also: Option<String>,
     pub bid: Option<Vec<String>>,
+    pub cve: Option<Vec<String>>,
     pub xref: Option<Vec<String>>,
     pub patch_publication_date: Option<String>,
     pub vuln_publication_date: Option<String>,
