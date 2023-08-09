@@ -188,8 +188,8 @@ pub struct ReportItem {
     pub metasploit_name: Option<String>,
     pub canvas_package: Option<String>,
     pub cvss_vector: Option<String>,
-    pub cvss_base_score: Option<String>,
-    pub cvss_temporal_score: Option<String>,
+    pub cvss_base_score: Option<u8>,
+    pub cvss_temporal_score: Option<u8>,
     pub change: Option<String>,
     pub plugin_type: Option<String>,
     pub plugin_version: Option<String>,
@@ -203,18 +203,6 @@ pub struct ReportItem {
     pub cm_compliancecheck_id: Option<String>,
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 #[cfg(test)]
 mod tests {
