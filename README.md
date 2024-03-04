@@ -1,10 +1,18 @@
+<h1 align="center">
+    <br>
+    <img src="assets/nessusx_logo.png" width="200px" alt="GoAD">
+    <br>
+    Nessus X - The definitive parser
+</h1>
+
+
 # nessusx
-Fast and reliable rust implementation of xml to json parser for qualys scans.
+Fast and reliable rust serialization of xml scan results (.nessus).
 
 ## How to use it
 
 ```bash
-nessusx -x report.nessus > out.json
+nessusx report.nessus --csv out.csv
 [WRN] Use with caution. You are responsible for your actions.
 [WRN] Developers assume no liability and are not responsible for any misuse or damage.
 ```
