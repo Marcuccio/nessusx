@@ -1,17 +1,83 @@
-use serde_xml_rs::Error;
+use std::{io, error::Error};
 use serde_xml_rs;
 use serde::{Deserialize, Serialize};
+use csv::{Terminator, Writer, WriterBuilder};
+use std::collections::HashMap;
 
-pub fn from_file(xml: &str) -> Result<Scan, Error> {
+
+pub fn from_file(xml: &str) -> Result<Scan, serde_xml_rs::Error> {
     
     let file = std::fs::read_to_string(xml)?;
 
     return from_str(file)
 }
 
-pub fn from_str<I: Into<String>>(buffer: I) -> Result<Scan, Error> {
+pub fn from_str<I: Into<String>>(buffer: I) -> Result<Scan, serde_xml_rs::Error> {
     return serde_xml_rs::from_reader(buffer.into().as_bytes());
 }
+
+#[derive(serde::Serialize)]
+struct Row {
+    host_ip: String,
+    item: ReportItem,
+}
+
+pub fn multiple_to<W: io::Write>(list_of_nessus: Vec<String>, w: W) -> Result<(), Box<dyn Error>>  {
+    
+    let mut wtr = WriterBuilder::new()
+        .has_headers(false)
+        .terminator(Terminator::CRLF)
+        .from_writer(w);
+
+    let header = vec![
+        "hostip", "port", "svc_name", "protocol", "severity", "plugin_id", "plugin_name", "plugin_family", "agent",
+        "always_run", "description", "fname", "plugin_modification_date", "plugin_publication_date",
+        "risk_factor", "script_version", "solution", "synopsis", "thorough_tests", "plugin_output",
+        "see_also", "bid", "cve", "xref", "patch_publication_date", "vuln_publication_date",
+        "exploitability_ease", "exploit_available", "exploit_framework_canvas", "exploit_framework_metasploit",
+        "exploit_framework_core", "metasploit_name", "canvas_package", "cvss_vector", "cvss_base_score",
+        "cvss_temporal_score", "change", "plugin_type", "plugin_version", "cm_complianceinfo",
+        "cm_complianceresult", "cm_complianceactualvalue", "cm_compliancecheck_id",
+    ];
+    
+    wtr.write_record(header)?;
+
+    for nessus in list_of_nessus {
+        let scan = from_file(&nessus)?;
+    
+        to_csv(&scan, &mut wtr)?;
+ 
+    }
+    
+    wtr.flush()?;
+    Ok(())
+}
+
+pub fn to_csv<W: io::Write>(scan: &Scan, wtr: &mut Writer<W>) -> Result<(), Box<dyn Error>> {
+    for r in scan.report.iter() {
+        println!("{}", r.name);
+
+        for host_report in r.report_host.iter() {
+            let host_ip = &host_report.name;
+            
+            for item in host_report.report_item.iter() {
+                
+                let row: Row = Row { host_ip: host_ip.to_string(), item: item.clone() };
+                if let Err(e) = wtr.serialize(&row) {
+                    eprintln!("Failed to serialize row {:?}: {}", host_ip, e);
+                }
+            }
+        }
+    }
+    
+    // if let Err(e) = wtr.flush() {
+    //     eprintln!("Failed to flush writer: {}", e);
+    //     return Err(Box::new(e));
+    // }
+
+    Ok(())
+}
+
 
 // NessusClientDataV2
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
@@ -176,8 +242,11 @@ pub struct ReportItem {
     pub thorough_tests: Option<String>,
     pub plugin_output: Option<String>,
     pub see_also: Option<String>,
+    #[serde(serialize_with = "serialize_option_vec_as_string")]
     pub bid: Option<Vec<String>>,
+    #[serde(serialize_with = "serialize_option_vec_as_string")]
     pub cve: Option<Vec<String>>,
+    #[serde(serialize_with = "serialize_option_vec_as_string")]
     pub xref: Option<Vec<String>>,
     pub patch_publication_date: Option<String>,
     pub vuln_publication_date: Option<String>,
@@ -189,8 +258,8 @@ pub struct ReportItem {
     pub metasploit_name: Option<String>,
     pub canvas_package: Option<String>,
     pub cvss_vector: Option<String>,
-    pub cvss_base_score: Option<u8>,
-    pub cvss_temporal_score: Option<u8>,
+    pub cvss_base_score: Option<String>,
+    pub cvss_temporal_score: Option<String>,
     pub change: Option<String>,
     pub plugin_type: Option<String>,
     pub plugin_version: Option<String>,
@@ -205,13 +274,69 @@ pub struct ReportItem {
 
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// Define a custom serialization function
+fn serialize_option_vec_as_string<S>(option_vec: &Option<Vec<String>>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match option_vec {
+        Some(vec) => {
+            let joined = vec.join(", ");
+            serializer.serialize_str(&joined)
+        },
+        None => serializer.serialize_none(),
+    }
+}
 
-    #[test]
-    fn it_works() {
-        let result = 4;
-        assert_eq!(result, 4);
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    #[serde(default = "default_fields")]
+    fields: HashMap<String, bool>,
+}
+
+fn default_fields() -> HashMap<String, bool> {
+    let true_fields = vec![
+        "port", "svc_name", "protocol", "severity", "plugin_id", "plugin_name", "plugin_family", "agent",
+        "always_run", "description", "fname", "plugin_modification_date", "plugin_publication_date",
+        "risk_factor", "script_version", "solution", "synopsis", "thorough_tests", "plugin_output",
+        "see_also", "bid", "cve", "xref", "patch_publication_date", "vuln_publication_date",
+    ];
+
+    let false_fields = vec![
+        "exploitability_ease", "exploit_available", "exploit_framework_canvas", "exploit_framework_metasploit",
+        "exploit_framework_core", "metasploit_name", "canvas_package", "cvss_vector", "cvss_base_score",
+        "cvss_temporal_score", "change", "plugin_type", "plugin_version", "cm_complianceinfo",
+        "cm_complianceresult", "cm_complianceactualvalue", "cm_compliancecheck_id",
+    ];
+
+    let mut fields_map: HashMap<String, bool> = HashMap::new();
+
+    // Set specified fields to true
+    for field in true_fields {
+        fields_map.insert(field.to_string(), true);
+    }
+
+    // Set specified fields to false
+    for field in false_fields {
+        fields_map.insert(field.to_string(), false);
+    }
+
+    fields_map
+}
+
+impl Default for Config {
+    fn default() -> Self { 
+        Config {
+            fields: default_fields()
+        }
+     }
+}
+
+impl Config {
+    pub fn get_fields_to_serialize(&self) -> Vec<String> {
+        self.fields
+            .iter()
+            .filter_map(|(key, &value)| if value { Some(key.clone()) } else { None })
+            .collect()
     }
 }
