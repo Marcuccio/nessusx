@@ -5,10 +5,6 @@
     Nessus X - The definitive parser
 </h1>
 
-
-# nessusx
-Fast and reliable rust serialization of xml scan results (.nessus).
-
 ## How to use it
 
 ```bash
