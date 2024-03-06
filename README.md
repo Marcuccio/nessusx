@@ -22,12 +22,11 @@ nessusx --output tothisfile.csv file1.nessus file2.nessus
 ```bash
 # ... and of course you can ask for a json output
 nessusx --json --output tothisfile.csv file1.nessus file2.nessus
-nessusx report.nessus --csv out.csv
 [WRN] Use with caution. You are responsible for your actions.
 
 ```
 
-## ... or use nessusx in your projects
+## nessusx is also a library and can be used in your projects
 
 ```rust
 use nessusx::from_file;
