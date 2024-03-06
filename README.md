@@ -1,5 +1,9 @@
-# nessusx
-Fast and reliable rust implementation of xml to json parser for qualys scans.
+<h1 align="center">
+    <br>
+    <img src="assets/nessusx_logo.png" width="200px" alt="GoAD">
+    <br>
+    Nessus X - The definitive parser
+</h1>
 
 ## How to use it
 
@@ -18,6 +22,7 @@ nessusx --output tothisfile.csv file1.nessus file2.nessus
 ```bash
 # ... and of course you can ask for a json output
 nessusx --json --output tothisfile.csv file1.nessus file2.nessus
+nessusx report.nessus --csv out.csv
 [WRN] Use with caution. You are responsible for your actions.
 
 ```
