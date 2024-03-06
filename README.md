@@ -4,20 +4,32 @@ Fast and reliable rust implementation of xml to json parser for qualys scans.
 ## How to use it
 
 ```bash
-nessusx -x report.nessus > out.json
+# Default it serialize as csv in the stdout
+nessusx file1.nessus file2.nessus
 [WRN] Use with caution. You are responsible for your actions.
-[WRN] Developers assume no liability and are not responsible for any misuse or damage.
+
+```
+```bash
+# ... or you can specify a path as output
+nessusx --output tothisfile.csv file1.nessus file2.nessus
+[WRN] Use with caution. You are responsible for your actions.
+
+```
+```bash
+# ... and of course you can ask for a json output
+nessusx --json --output tothisfile.csv file1.nessus file2.nessus
+[WRN] Use with caution. You are responsible for your actions.
+
 ```
 
 ## ... or use nessusx in your projects
 
 ```rust
-use nessusx::from_str;
+use nessusx::from_file;
 
 fn main() {
 
-    let file: String = std::fs::read_to_string(xml).unwrap();
-    let scan: nessusx::Scan = nessusx::from_str(&file).unwrap();
+    let scan: nessusx::Scan = nessusx::from_file(&path).unwrap();
     let j = serde_json::to_string(&scan).unwrap();
     
     println!("{}", j);

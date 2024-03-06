@@ -1,9 +1,9 @@
 [package]
 name = "nessusx"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 authors = ["abut0n"]
-description = "nessus serializer & deserializer"
+description = "nessus serializer & deserializer (json & csv)"
 repository = "https://github.com/Marcuccio/nessusx"
 readme = "README.md"
 license = "GPL-3.0-only"

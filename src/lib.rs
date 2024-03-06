@@ -1,11 +1,12 @@
-use std::{io, error::Error};
+use std::{error::Error, io, path::PathBuf};
 use serde_xml_rs;
 use serde::{Deserialize, Serialize};
-use csv::{Terminator, Writer, WriterBuilder};
-use std::collections::HashMap;
+use csv::{Terminator, Writer};
+
+mod util;
 
 
-pub fn from_file(xml: &str) -> Result<Scan, serde_xml_rs::Error> {
+pub fn from_file(xml: &PathBuf) -> Result<Scan, serde_xml_rs::Error> {
     
     let file = std::fs::read_to_string(xml)?;
 
@@ -22,9 +23,30 @@ struct Row {
     item: ReportItem,
 }
 
-pub fn multiple_to<W: io::Write>(list_of_nessus: Vec<String>, w: W) -> Result<(), Box<dyn Error>>  {
+
+
+pub fn as_json<W: io::Write>(list_of_nessus: Vec<PathBuf>, w: W) -> Result<(), Box<dyn Error>> {
+
+    let mut collector: Vec<ReportHost> = vec![];
+
+    for nessus in list_of_nessus {
+        let scan = from_file(&nessus)?;
+
+        for r in scan.report.iter() {
+            println!("[+] Found: {}", r.name);
+            collector.extend_from_slice(&r.report_host);
+        }
+    }
+
+    // Serialize the collector vector into JSON and write it using the writer provided
+    serde_json::to_writer(w, &collector)?;
+
+    Ok(())
+}
+
+pub fn as_csv<W: io::Write>(list_of_nessus: Vec<PathBuf>, w: W) -> Result<(), Box<dyn Error>>  {
     
-    let mut wtr = WriterBuilder::new()
+    let mut wtr = csv::WriterBuilder::new()
         .has_headers(false)
         .terminator(Terminator::CRLF)
         .from_writer(w);
@@ -44,18 +66,17 @@ pub fn multiple_to<W: io::Write>(list_of_nessus: Vec<String>, w: W) -> Result<()
 
     for nessus in list_of_nessus {
         let scan = from_file(&nessus)?;
-    
-        to_csv(&scan, &mut wtr)?;
- 
+        to(&scan, &mut wtr)?;
     }
     
     wtr.flush()?;
     Ok(())
 }
 
-pub fn to_csv<W: io::Write>(scan: &Scan, wtr: &mut Writer<W>) -> Result<(), Box<dyn Error>> {
+fn to<W: io::Write>(scan: &Scan, wtr: &mut Writer<W>) -> Result<(), Box<dyn Error>> {
     for r in scan.report.iter() {
-        println!("{}", r.name);
+        println!();
+        util::info(format!("[+] Found: {}", r.name));
 
         for host_report in r.report_host.iter() {
             let host_ip = &host_report.name;
@@ -63,17 +84,13 @@ pub fn to_csv<W: io::Write>(scan: &Scan, wtr: &mut Writer<W>) -> Result<(), Box<
             for item in host_report.report_item.iter() {
                 
                 let row: Row = Row { host_ip: host_ip.to_string(), item: item.clone() };
+
                 if let Err(e) = wtr.serialize(&row) {
-                    eprintln!("Failed to serialize row {:?}: {}", host_ip, e);
+                    util::error(format!("[Error] Failed to serialize row {:?}: {}", host_ip, e));
                 }
             }
         }
     }
-    
-    // if let Err(e) = wtr.flush() {
-    //     eprintln!("Failed to flush writer: {}", e);
-    //     return Err(Box::new(e));
-    // }
 
     Ok(())
 }
@@ -285,58 +302,5 @@ where
             serializer.serialize_str(&joined)
         },
         None => serializer.serialize_none(),
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Config {
-    #[serde(default = "default_fields")]
-    fields: HashMap<String, bool>,
-}
-
-fn default_fields() -> HashMap<String, bool> {
-    let true_fields = vec![
-        "port", "svc_name", "protocol", "severity", "plugin_id", "plugin_name", "plugin_family", "agent",
-        "always_run", "description", "fname", "plugin_modification_date", "plugin_publication_date",
-        "risk_factor", "script_version", "solution", "synopsis", "thorough_tests", "plugin_output",
-        "see_also", "bid", "cve", "xref", "patch_publication_date", "vuln_publication_date",
-    ];
-
-    let false_fields = vec![
-        "exploitability_ease", "exploit_available", "exploit_framework_canvas", "exploit_framework_metasploit",
-        "exploit_framework_core", "metasploit_name", "canvas_package", "cvss_vector", "cvss_base_score",
-        "cvss_temporal_score", "change", "plugin_type", "plugin_version", "cm_complianceinfo",
-        "cm_complianceresult", "cm_complianceactualvalue", "cm_compliancecheck_id",
-    ];
-
-    let mut fields_map: HashMap<String, bool> = HashMap::new();
-
-    // Set specified fields to true
-    for field in true_fields {
-        fields_map.insert(field.to_string(), true);
-    }
-
-    // Set specified fields to false
-    for field in false_fields {
-        fields_map.insert(field.to_string(), false);
-    }
-
-    fields_map
-}
-
-impl Default for Config {
-    fn default() -> Self { 
-        Config {
-            fields: default_fields()
-        }
-     }
-}
-
-impl Config {
-    pub fn get_fields_to_serialize(&self) -> Vec<String> {
-        self.fields
-            .iter()
-            .filter_map(|(key, &value)| if value { Some(key.clone()) } else { None })
-            .collect()
     }
 }
