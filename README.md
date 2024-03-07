@@ -8,7 +8,7 @@
 ## How to use it
 
 ```bash
-# Default it serialize as csv in the stdout
+# By default, it serializes as CSV to stdout
 nessusx file1.nessus file2.nessus
 [WRN] Use with caution. You are responsible for your actions.
 
@@ -20,7 +20,7 @@ nessusx --output tothisfile.csv file1.nessus file2.nessus
 
 ```
 ```bash
-# ... and of course you can ask for a json output
+# ... and you can request JSON output
 nessusx --json --output tothisfile.csv file1.nessus file2.nessus
 [WRN] Use with caution. You are responsible for your actions.
 
